@@ -13,7 +13,7 @@ from utils.inference import apply_offsets
 from utils.inference import load_detection_model
 from utils.preprocessor import preprocess_input
 
-USE_WEBCAM = True # If false, loads video file source
+USE_WEBCAM = False # If false, loads video file source
 
 # parameters for loading data and images
 emotion_model_path = './models/emotion_model.hdf5'
@@ -27,7 +27,7 @@ emotion_offsets = (20, 40)
 detector = dlib.get_frontal_face_detector()
 emotion_classifier = load_model(emotion_model_path)
 
-predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+# predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 # getting input model shapes for inference
 emotion_target_size = emotion_classifier.input_shape[1:3]
@@ -46,7 +46,7 @@ trump_face_encoding = face_recognition.face_encodings(trump_image)[0]
 modi_image = face_recognition.load_image_file("images/Modi.jpg")
 modi_face_encoding = face_recognition.face_encodings(modi_image)[0]
 
-vj_image = face_recognition.load_image_file("images/Vijay.jpg")
+vj_image = face_recognition.load_image_file("images/Sourav.jpg")
 vj_face_encoding = face_recognition.face_encodings(vj_image)[0]
 
 # Create arrays of known face encodings and their names
@@ -57,10 +57,10 @@ known_face_encodings = [
     vj_face_encoding
 ]
 known_face_names = [
-    "Barack Obama",
-    "Trump",
-    "Modi",
-    "Vijay"
+    "This Guy",
+    "This Guy",
+    "This Guy",
+    "This Guy"
 ]
 
 # Initialize some variables
@@ -71,8 +71,9 @@ process_this_frame = True
 
 
 def face_compare(frame,process_this_frame):
+    print ("compare")
     # Resize frame of video to 1/4 size for faster face recognition processing
-    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+    small_frame = cv2.resize(frame, (0, 0), fx=0.50, fy=0.50)
 
     # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
     rgb_small_frame = small_frame[:, :, ::-1]
@@ -98,17 +99,18 @@ def face_compare(frame,process_this_frame):
 
     process_this_frame = not process_this_frame
 
-
+    return face_names
     # Display the results
     for (top, right, bottom, left), name in zip(face_locations, face_names):
         # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-        top *= 4
-        right *= 4
-        bottom *= 4
-        left *= 4
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 0), cv2.FILLED)
+        top *= 2
+        right *= 2
+        bottom *= 2
+        left *= 2
+        #cv2.rectangle(frame, (left, bottom+36), (right, bottom), (0, 0, 0), cv2.FILLED)
         font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, name, (left + 6, bottom+20), font, 0.3, (255, 255, 255), 1)
+        print ("text print")
 
 # starting video streaming
 
@@ -120,11 +122,10 @@ cap = None
 if (USE_WEBCAM == True):
     cap = cv2.VideoCapture(0) # Webcam source
 else:
-    cap = cv2.VideoCapture('./demo/test2(0).mp4') # Video file source
+    cap = cv2.VideoCapture('./test/testvdo.mp4') # Video file source
 
 while cap.isOpened(): # True:
     ret, frame = cap.read()
-
 
     #frame = video_capture.read()[1]
 
@@ -134,7 +135,7 @@ while cap.isOpened(): # True:
     #     for key,val in l.items():
     #         for (x,y) in val:
     #             cv2.circle(frame, (x, y), 1, (255,0, 0), -1)
-    face_compare(frame,process_this_frame)
+
 
     gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -142,8 +143,9 @@ while cap.isOpened(): # True:
     faces = detector(rgb_image)
     # face_locations = face_recognition.face_locations(rgb_image)
     # print (reversed(face_locations))
-
-    for face_coordinates in faces:
+    face_name = face_compare(rgb_image,process_this_frame)
+    for face_coordinates, fname in zip(faces,face_name):
+        print ("forrrrr")
         x1, x2, y1, y2 = apply_offsets(face_utils.rect_to_bb(face_coordinates), emotion_offsets)
         gray_face = gray_image[y1:y2, x1:x2]
         try:
@@ -182,9 +184,14 @@ while cap.isOpened(): # True:
         color = color.astype(int)
         color = color.tolist()
 
+        if fname == "Unknown":
+            name = emotion_text
+        else:
+            name = str(fname) + " is " + str(emotion_text)
+        
         draw_bounding_box(face_utils.rect_to_bb(face_coordinates), rgb_image, color)
-        draw_text(face_utils.rect_to_bb(face_coordinates), rgb_image, emotion_mode,
-                  color, 0, -45, 1, 1)
+        draw_text(face_utils.rect_to_bb(face_coordinates), rgb_image, name,
+                  color, 0, -45, 0.5, 1)
 
 
     frame = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
@@ -194,3 +201,4 @@ while cap.isOpened(): # True:
 
 cap.release()
 cv2.destroyAllWindows()
+
