@@ -51,7 +51,7 @@ else:
 while cap.isOpened(): # True:
     ret, bgr_image = cap.read()
 
-    #bgr_image = video_capture.read()[1]
+    bgr_image = video_capture.read()[1]
 
     gray_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
     rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
